@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "bmm-multitask-learning"
+version = "0.1.0"
+description = "algos for multitask learning"
+authors = ["sem-k32 <kirill.semkin32@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+torch = "^2.6.0"
+numpy = "^2.2.3"
+pandas = "^2.2.3"
+omegaconf = "^2.3.0"
+pipe = "^2.2"
+lightning = "^2.5.0.post0"
+pytest = "^8.3.5"
+sphinx = "^8.2.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
