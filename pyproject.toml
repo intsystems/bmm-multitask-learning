@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "algos for multitask learning"
 authors = ["sem-k32 <kirill.semkin32@mail.ru>"]
 readme = "README.md"
+include = [
+    { path = "bmm_multitask_learning" }
+]
+
 
 [tool.poetry.dependencies]
 python = "^3.12"

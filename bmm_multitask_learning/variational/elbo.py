@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from torch import distributions as distr
 
-from distr import kl_sample_estimation, TargetDistr, LatentDistr
+from .distr import kl_sample_estimation, TargetDistr, LatentDistr
 
 class MultiTaskElbo(nn.Module):
     """General ELBO computer for variational multitask problem. 
