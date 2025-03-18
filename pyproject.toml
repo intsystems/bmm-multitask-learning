@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "bmm-multitask-learning"
+name = "bmm_multitask_learning"
 version = "0.1.0"
 description = "algos for multitask learning"
 authors = ["sem-k32 <kirill.semkin32@mail.ru>"]
