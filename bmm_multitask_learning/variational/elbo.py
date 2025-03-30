@@ -1,5 +1,6 @@
 from typing import Literal, Callable
 from functools import partial
+from statistics import mean
 from pipe import select
 from itertools import product
 
@@ -8,6 +9,7 @@ from torch import nn
 from torch import distributions as distr
 
 from .distr import kl_sample_estimation, TargetDistr, LatentDistr
+
 
 class MultiTaskElbo(nn.Module):
     """General ELBO computer for variational multitask problem. 
@@ -57,7 +59,7 @@ class MultiTaskElbo(nn.Module):
             )
         ] * 2
 
-    def forward(self, targets: list[torch.Tensor], data: list[torch.Tensor], i: int) -> torch.Tensor:
+    def forward(self, targets: list[torch.Tensor], data: list[torch.Tensor], step: int) -> torch.Tensor:
         """Computes ELBO estimation for variational multitask problem.
 
         Args:
@@ -67,10 +69,10 @@ class MultiTaskElbo(nn.Module):
         Returns:
             torch.Tensor: ELBO estimation
         """
-        # get mixing values
-        temp = self.temp_scheduler(i)
-        classifier_mixing = self._get_gumbsoftm_mixing(self._classifier_mixings_params, temp)
-        latent_mixing = self._get_gumbsoftm_mixing(self._latent_mixings_params, temp)
+        # get mixing values in form of matrix
+        temp = self.temp_scheduler(step)
+        classifier_mixing = self._get_gumbelsm_mixing(self._classifier_mixings_params, temp)
+        latent_mixing = self._get_gumbelsm_mixing(self._latent_mixings_params, temp)
 
         # sample classifiers
         # shape = (num_tasks, classifier_num_particles, classifier_shape)
@@ -97,14 +99,19 @@ class MultiTaskElbo(nn.Module):
             sample_lh = []
             for j, sample in enumerate(targets[i]):
                 sample_lh.append(
-                    sum(
+                    # try use "mean" function
+                    # sum(
+                    #     product(latents[i][j], classifiers[i]) |
+                    #     select(lambda lat_cl: task_cond_distr(*lat_cl).log_prob(sample))
+                    # ) / (self.latent_num_particles * self.classifier_num_particles)
+                    mean(
                         product(latents[i][j], classifiers[i]) |
                         select(lambda lat_cl: task_cond_distr(*lat_cl).log_prob(sample))
-                    ) / (self.latent_num_particles * self.classifier_num_particles)
+                    )
                 )
             lh.append(sample_lh)
-        # sum samples lh for each task and average across tasks
-        lh: torch.Tensor = sum(lh | select(sum)) / self.num_tasks
+        # sum lh samples for each task and average across tasks
+        lh: torch.Tensor = mean(lh | select(sum))
         
         # get latents kl for each task, for each datum in task
         # shape = (num_tasks, num_samples(num_tasks))
@@ -138,12 +145,15 @@ class MultiTaskElbo(nn.Module):
     def _compute_kl(self, distr_1: distr.Distribution, distr_2: distr.Distribution) -> torch.Tensor:
         """Computes KL analytically if possible else make a sample estimation
         """
+        if distr_1 is distr_2:
+            return 0.
+
         try:
             return distr.kl_divergence(distr_1, distr_2)
         except NotImplementedError:
             return kl_sample_estimation(distr_1, distr_2, self.kl_estimator_num_samples)
 
-    def _get_gumbsoftm_mixing(self, mixings_params: torch.Tensor, temp: float) -> torch.Tensor:
+    def _get_gumbelsm_mixing(self, mixings_params: torch.Tensor, temp: float) -> torch.Tensor:
         # mixing with self is prohibited, so we mask diagonal to get zeros after softmax
         mask = torch.eye(self.num_tasks) * float("-inf")
 
