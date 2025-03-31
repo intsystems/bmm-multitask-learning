@@ -168,7 +168,7 @@ class MultiTaskElbo(nn.Module):
     @property
     def classifier_mixings_params(self):
         return self._classifier_mixings_params
-    
+
     @property
     def latent_mixings_params(self):
         return self._latent_mixings_params
