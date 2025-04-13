@@ -26,6 +26,7 @@ class MultiTaskElbo(nn.Module):
         kl_estimator_num_samples: int = 10
     ):
         """
+        TODO: rewrite docstring
         Args:
             task_distrs (list[distr.Distribution]): Data distribution for each task p_t(y | z, w)
             task_num_samples (list[int]): Number of train samples for each task. Needed for unbiased ELBO computation in case of batched data.
@@ -65,10 +66,13 @@ class MultiTaskElbo(nn.Module):
         Args:
             targets (list[torch.Tensor]): batched targets (y) for each task 
             data (list[torch.Tensor]): batched data (X) for each task 
+            step: needed for temperature func
 
         Returns:
             torch.Tensor: ELBO estimation
         """
+        batch_sizes = list(data | select(lambda x: x.shape[0]))
+
         # get mixing values in form of matrix
         temp = self.temp_scheduler(step)
         classifier_mixing = self._get_gumbelsm_mixing(self._classifier_mixings_params, temp)
@@ -94,7 +98,7 @@ class MultiTaskElbo(nn.Module):
             latents.append(latent_samples_per_data)
 
         # get log liklyhood for task + sampled averaged across latent and classifier particles
-        lh = []
+        lh_per_task = []
         for i, task_cond_distr in enumerate(self.task_distrs):
             sample_lh = []
             for j, sample in enumerate(targets[i]):
@@ -109,10 +113,14 @@ class MultiTaskElbo(nn.Module):
                         select(lambda lat_cl: task_cond_distr(*lat_cl).log_prob(sample))
                     )
                 )
-            lh.append(sample_lh)
-        # sum lh samples for each task and average across tasks
-        lh: torch.Tensor = mean(lh | select(sum))
-        
+            lh_per_task.append(sample_lh)
+        # sum lh samples for each task (regarding butch size correction)
+        # and average across tasks
+        lh_val = []
+        for i, sample_lh in enumerate(lh_per_task):
+            lh_val.append((self.num_tasks[i] / batch_sizes[i]) * sum(sample_lh))
+        lh_val = mean(lh_per_task)
+
         # get latents kl for each task, for each datum in task
         # shape = (num_tasks, num_samples(num_tasks))
         latents_kl = []
@@ -140,7 +148,7 @@ class MultiTaskElbo(nn.Module):
         # average classifiers kl
         classifiers_kl = sum(classifiers_kl) / self.num_tasks
 
-        return lh + latents_kl + classifiers_kl
+        return lh_val + latents_kl + classifiers_kl
 
     def _compute_kl(self, distr_1: distr.Distribution, distr_2: distr.Distribution) -> torch.Tensor:
         """Computes KL analytically if possible else make a sample estimation

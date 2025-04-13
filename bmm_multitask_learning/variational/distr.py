@@ -48,14 +48,14 @@ class Predictive(distr.Distribution):
 
         target_distr_example: distr.Distribution = self.target_distrs[0]
         super().__init__(
-            batch_shape=target_distr_example.batch_shape, 
-            event_shape=target_distr_example.event_shape, 
+            batch_shape=target_distr_example.batch_shape,
+            event_shape=target_distr_example.event_shape,
             validate_args=target_distr_example._validate_args
         )
 
     def log_prob(self, value):
         return torch.concat(list(
-            self.target_distrs | select(lambda distr: distr.log_prob(value))
+            self.target_distrs | select(lambda d: d.log_prob(value))
         )).mean()
 
     def sample(self, sample_shape = ...):
