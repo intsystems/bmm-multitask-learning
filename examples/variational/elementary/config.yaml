@@ -1,11 +1,15 @@
 seed: 184
+
 size: 200
 dim: 2
+
 test_ratio: 0.2
 batch_size: 25
 
-classifier_num_particles: 10
-latent_num_particles: 10
+mt_elbo:
+  classifier_num_particles: 10
+  latent_num_particles: 10
+  kl_estimator_num_samples: 10
 
 trainer:
   max_epochs: 10
