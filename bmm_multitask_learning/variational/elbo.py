@@ -163,7 +163,7 @@ class MultiTaskElbo(nn.Module):
 
     def _get_gumbelsm_mixing(self, mixings_params: torch.Tensor, temp: float) -> torch.Tensor:
         # mixing with self is prohibited, so we mask diagonal to get zeros after softmax
-        mask = torch.eye(self.num_tasks) * float("-inf")
+        mask = torch.diag(torch.full((self.num_tasks, ), -torch.inf))
 
         mixing = distr.Gumbel(0., 1.).sample((self.num_tasks, self.num_tasks))
         mixing += mixings_params.log()
