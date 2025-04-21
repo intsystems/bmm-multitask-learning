@@ -154,7 +154,7 @@ class MultiTaskElbo(nn.Module):
         """Computes KL analytically if possible else make a sample estimation
         """
         if distr_1 is distr_2:
-            return 0.
+            return torch.zeros(distr_1.batch_shape)
 
         try:
             return distr.kl_divergence(distr_1, distr_2)
