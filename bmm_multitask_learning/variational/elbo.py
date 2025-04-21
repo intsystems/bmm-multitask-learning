@@ -1,6 +1,5 @@
 from typing import Literal, Callable
 from functools import partial
-from statistics import mean
 from pipe import select
 from itertools import product
 
@@ -60,7 +59,7 @@ class MultiTaskElbo(nn.Module):
             )
         ] * 2
 
-    def forward(self, targets: list[torch.Tensor], data: list[torch.Tensor], step: int) -> torch.Tensor:
+    def forward(self, data: list[torch.Tensor], targets: list[torch.Tensor], step: int) -> torch.Tensor:
         """Computes ELBO estimation for variational multitask problem.
 
         Args:
@@ -72,6 +71,7 @@ class MultiTaskElbo(nn.Module):
             torch.Tensor: ELBO estimation
         """
         batch_sizes = list(data | select(lambda x: x.shape[0]))
+        target_shapes = list(targets | select(lambda x: list(x.shape[1:])))
 
         # get mixing values in form of matrix
         temp = self.temp_scheduler(step)
@@ -88,65 +88,57 @@ class MultiTaskElbo(nn.Module):
         )
 
         # sample latents
-        # shape = (num_tasks, num_samples(num_tasks), latent_num_particles, latent_shape)
+        # shape = [num_tasks, (num_samples(num_tasks), latent_num_particles, latent_shape)]
         latents = []
         for i, latent_cond_distr in enumerate(self.latent_distr):
-            latent_samples_per_data = []
-            for sample in data[i]:
-                latent_distr = latent_cond_distr(sample)
-                latent_samples_per_data.append(latent_distr.rsample((self.latent_num_particles, )))
-            latents.append(latent_samples_per_data)
+            latents.append(
+                latent_cond_distr(data[i]).rsample((self.latent_num_particles, )).swapaxes(0, 1)
+            )
 
         # get log liklyhood for task + sampled averaged across latent and classifier particles
         lh_per_task = []
         for i, task_cond_distr in enumerate(self.task_distrs):
-            sample_lh = []
-            for j, sample in enumerate(targets[i]):
-                sample_lh.append(
-                    # try use "mean" function
-                    # sum(
-                    #     product(latents[i][j], classifiers[i]) |
-                    #     select(lambda lat_cl: task_cond_distr(*lat_cl).log_prob(sample))
-                    # ) / (self.latent_num_particles * self.classifier_num_particles)
-                    mean(
-                        product(latents[i][j], classifiers[i]) |
-                        select(lambda lat_cl: task_cond_distr(*lat_cl).log_prob(sample))
-                    )
-                )
-            lh_per_task.append(sample_lh)
-        # sum lh samples for each task (regarding butch size correction)
-        # and average across tasks
-        lh_val = []
-        for i, sample_lh in enumerate(lh_per_task):
-            lh_val.append((self.num_tasks[i] / batch_sizes[i]) * sum(sample_lh))
-        lh_val = mean(lh_per_task)
+            # (num_samples, lat_num_part, classifier_num_part, target_shape)
+            lh_per_task.append(
+                task_cond_distr(latents[i], classifiers[i]).log_prob(
+                    targets[i][:, None, None, ...].expand([-1, self.latent_num_particles, self.classifier_num_particles] + target_shapes[i])
+                )\
+                # mean across classifiers and latents
+                .mean(dim=(1, 2))\
+                # sum across targets with batch size correction
+                .sum(dim=0) * (self.task_num_samples[i] / batch_sizes[i])
+            )
+        # average lh samples across tasks
+        lh_val = torch.stack(lh_per_task).mean()
 
-        # get latents kl for each task, for each datum in task
-        # shape = (num_tasks, num_samples(num_tasks))
+        # get summed latents kl for each task
         latents_kl = []
-        for i in range(len(self.latent_distr)):
-            kl_for_samples = []
-            for sample in data[i]:
-                latent_distrs = [latent_cond_distr(sample) for latent_cond_distr in self.latent_distr]
-                # fix distribution for task i in kl function as first argument
-                kl_computer = partial(self._compute_kl, distr_1=latent_distrs[i])
-                individual_kls = torch.tensor([kl_computer(latent_distr) for latent_distr in latent_distr])
-                # this is an estimation of the kl for mixed distribution
-                full_kl = individual_kls.dot(latent_mixing[i])
-                kl_for_samples.append(full_kl)
-            latents_kl.append(kl_for_samples)
-        # sum latents kl for each task and average among tasks
-        latents_kl: torch.Tensor = sum(latents_kl | select(sum)) / self.num_tasks
+        for i in range(self.num_tasks):
+            cur_data = data[i]
+            cur_mixing = latent_mixing[i]
+            cur_distr = self.latent_distr[i](cur_data)
+
+            cur_kl = torch.stack(
+                [self._compute_kl(cur_distr, lat_cond_distr(cur_data)) for lat_cond_distr in self.latent_distr],
+                dim=1
+            ).matmul(cur_mixing)\
+            .sum()  # sum across batch
+            latents_kl.append(cur_kl)
+        # average kl among tasks
+        latents_kl: torch.Tensor = torch.stack(latents_kl).mean()
         
         # get classifiers kl for each task
         classifiers_kl = []
-        for i, classifier_distr in enumerate(self.classifier_distr):
-            kl_computer = partial(self._compute_kl, distr_1=classifier_distr)
-            individual_kls = torch.tensor([kl_computer(other_cl_distr) for other_cl_distr in self.classifier_distr])
-            full_kl = individual_kls.dot(classifier_mixing[i])
-            classifiers_kl.append(full_kl)
+        for i in range(self.num_tasks):
+            cur_distr = self.classifier_distr[i]
+            cur_mixing = classifier_mixing[i]
+
+            cur_kl = torch.stack(
+                [self._compute_kl(cur_distr, cl_cond_distr) for cl_cond_distr in self.classifier_distr]
+            ).dot(cur_mixing)
+            classifiers_kl.append(cur_kl)
         # average classifiers kl
-        classifiers_kl = sum(classifiers_kl) / self.num_tasks
+        classifiers_kl: torch.Tensor = torch.stack(classifiers_kl).mean()
 
         return lh_val + latents_kl + classifiers_kl
 
