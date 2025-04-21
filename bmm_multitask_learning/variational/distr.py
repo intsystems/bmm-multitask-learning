@@ -1,11 +1,9 @@
 """Utils for working with distributions
 """
 from typing import Callable
-from itertools import product
 from pipe import select
 
 import torch
-from torch import nn
 from torch import distributions as distr
 
 
@@ -13,6 +11,10 @@ from torch import distributions as distr
 type TargetDistr = Callable[[torch.Tensor, torch.Tensor], distr.Distribution]
 # conditional distribution for latents
 type LatentDistr = Callable[[torch.Tensor], distr.Distribution]
+# conditional distribution for targets, but batched latents and classifiers
+# must be flattened in one dimension. This is needed because of MixtureSameFamily design.
+# See https://github.com/pytorch/pytorch/issues/76709 for future possible automation
+type PredictiveDistr = Callable[[torch.Tensor, torch.Tensor], distr.Distribution]
 
 
 def kl_sample_estimation(
@@ -27,43 +29,20 @@ def kl_sample_estimation(
     return (log_p_1 - log_p_2).mean()
 
 
-class Predictive(distr.Distribution):
-    def __init__(
-        self,
-        task_distr: TargetDistr,
-        classifier_distr: distr.Distribution,
-        latent_distr: LatentDistr,
-        x: torch.Tensor,
-        classifier_num_particles: int = 1,
-        latent_num_particles: int = 1,
-    ):
-        # sample hidden state (classifier + latent) from posterior
-        classifier_samples = classifier_distr.sample((classifier_num_particles, ))
-        latent_samples = latent_distr(x).sample((latent_num_particles, ))
-        # build conditional distribution objects for target
-        self.target_distrs = list(
-            product(classifier_samples, latent_samples) |
-            select(lambda cl_lt: task_distr(*cl_lt))
-        )
+def build_predictive(
+    task_distr: PredictiveDistr,
+    classifier_distr: distr.Distribution,
+    latent_distr: LatentDistr,
+    X: torch.Tensor,
+    classifier_num_particles: int = 1,
+    latent_num_particles: int = 1
+) -> distr.MixtureSameFamily:
+    # sample hidden state (classifier + latent) from posterior
+    classifier_samples = classifier_distr.sample((classifier_num_particles, ))
+    latent_samples = latent_distr(X).sample((latent_num_particles, )).swapaxes(0, 1)
+    # build conditional distribution objects for target
+    task_distr = task_distr(latent_samples, classifier_samples)
 
-        target_distr_example: distr.Distribution = self.target_distrs[0]
-        super().__init__(
-            batch_shape=target_distr_example.batch_shape,
-            event_shape=target_distr_example.event_shape,
-            validate_args=target_distr_example._validate_args
-        )
+    mixing_distr = distr.Categorical(torch.ones(task_distr.batch_shape))
 
-    def log_prob(self, value):
-        return torch.concat(list(
-            self.target_distrs | select(lambda d: d.log_prob(value))
-        )).mean()
-
-    def sample(self, sample_shape = ...):
-        # choose distr from mix
-        indx = torch.randint(0, len(self.target_distrs), sample_shape).flatten().tolist()
-        # sample from chosen distr
-        samples = torch.concat(list(indx | select(lambda i: self.target_distrs[i].sample())))
-        # tune shape for the output samples
-        samples = samples.reshape(*sample_shape, -1)
-
-        return samples
+    return distr.MixtureSameFamily(mixing_distr, task_distr)
