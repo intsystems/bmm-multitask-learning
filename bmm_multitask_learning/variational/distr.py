@@ -30,7 +30,7 @@ def kl_sample_estimation(
 
 
 def build_predictive(
-    task_distr: PredictiveDistr,
+    pred_distr: PredictiveDistr,
     classifier_distr: distr.Distribution,
     latent_distr: LatentDistr,
     X: torch.Tensor,
@@ -41,8 +41,8 @@ def build_predictive(
     classifier_samples = classifier_distr.sample((classifier_num_particles, ))
     latent_samples = latent_distr(X).sample((latent_num_particles, )).swapaxes(0, 1)
     # build conditional distribution objects for target
-    task_distr = task_distr(latent_samples, classifier_samples)
+    pred_distr = pred_distr(latent_samples, classifier_samples)
 
-    mixing_distr = distr.Categorical(torch.ones(task_distr.batch_shape))
+    mixing_distr = distr.Categorical(torch.ones(pred_distr.batch_shape))
 
-    return distr.MixtureSameFamily(mixing_distr, task_distr)
+    return distr.MixtureSameFamily(mixing_distr, pred_distr)
