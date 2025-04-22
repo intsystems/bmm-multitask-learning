@@ -1,3 +1,5 @@
+[Sketch of Blog Post](https://github.com/intsystems/bmm-multitask-learning/blob/31a40445d1099c4a2aa3552995b5adabc2bd3495/Sketch_Multitask_Learning.pdf)
+
 # bmm-multitask
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
