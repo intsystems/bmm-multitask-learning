@@ -1,11 +1,11 @@
-seed: 184
+seed: 43
 
 # num samples and their dim
-size: 400
+size: 600
 dim: 2
 
 test_ratio: 0.2
-batch_size: 16
+batch_size: 32
 
 mt_elbo:
   classifier_num_particles: 10
@@ -15,4 +15,4 @@ mt_elbo:
 trainer:
   log_every_n_steps: 5
   accelerator: cpu
-  max_epochs: 10
+  max_epochs: 20
