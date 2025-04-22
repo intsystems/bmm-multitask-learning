@@ -100,7 +100,7 @@ class MultiTaskElbo(nn.Module):
         for i, task_cond_distr in enumerate(self.task_distrs):
             # (num_samples, lat_num_part, classifier_num_part, target_shape)
             lh_per_task.append(
-                task_cond_distr(latents[i], classifiers[i]).log_prob(
+                -task_cond_distr(latents[i], classifiers[i]).log_prob(
                     targets[i][:, None, None, ...].expand([-1, self.latent_num_particles, self.classifier_num_particles] + target_shapes[i])
                 )\
                 # mean across classifiers and latents
