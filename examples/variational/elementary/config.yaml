@@ -5,7 +5,7 @@ size: 600
 dim: 2
 
 test_ratio: 0.2
-batch_size: 32
+batch_size: 16
 
 mt_elbo:
   classifier_num_particles: 10
@@ -15,4 +15,4 @@ mt_elbo:
 trainer:
   log_every_n_steps: 5
   accelerator: cpu
-  max_epochs: 20
+  max_epochs: 100

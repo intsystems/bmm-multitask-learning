@@ -21,11 +21,12 @@ class MultiTaskElbo(nn.Module):
         latent_distr: list[LatentDistr],
         classifier_num_particles: int = 1,
         latent_num_particles: int = 1,
-        temp_scheduler: Callable | Literal["const"] = Literal["const"],
+        temp_scheduler: Callable[[int], float] | Literal["const"] = Literal["const"],
         kl_estimator_num_samples: int = 10
     ):
         """
         TODO: rewrite docstring
+        TODO: add pydantic class to restrict parameters (e.g. check lists' length is equal)
         Args:
             task_distrs (list[distr.Distribution]): Data distribution for each task p_t(y | z, w)
             task_num_samples (list[int]): Number of train samples for each task. Needed for unbiased ELBO computation in case of batched data.
@@ -70,9 +71,6 @@ class MultiTaskElbo(nn.Module):
         Returns:
             torch.Tensor: ELBO estimation
         """
-        batch_sizes = list(data | select(lambda x: x.shape[0]))
-        target_shapes = list(targets | select(lambda x: list(x.shape[1:])))
-
         # get mixing values in form of matrix
         temp = self.temp_scheduler(step)
         classifier_mixing = self._get_gumbelsm_mixing(self._classifier_mixings_params, temp)
@@ -97,17 +95,9 @@ class MultiTaskElbo(nn.Module):
 
         # get log liklyhood for task + sampled averaged across latent and classifier particles
         lh_per_task = []
-        for i, task_cond_distr in enumerate(self.task_distrs):
-            # (num_samples, lat_num_part, classifier_num_part, target_shape)
-            lh_per_task.append(
-                -task_cond_distr(latents[i], classifiers[i]).log_prob(
-                    targets[i][:, None, None, ...].expand([-1, self.latent_num_particles, self.classifier_num_particles] + target_shapes[i])
-                )\
-                # mean across classifiers and latents
-                .mean(dim=(1, 2))\
-                # sum across targets with batch size correction
-                .sum(dim=0) * (self.task_num_samples[i] / batch_sizes[i])
-            )
+        for i in range(self.num_tasks):
+            cur_lh = self._compute_lh_per_task(i, latents[i], classifiers[i], targets[i])
+            lh_per_task.append(cur_lh)
         # average lh samples across tasks
         lh_val = torch.stack(lh_per_task).mean()
 
@@ -116,32 +106,67 @@ class MultiTaskElbo(nn.Module):
         for i in range(self.num_tasks):
             cur_data = data[i]
             cur_mixing = latent_mixing[i]
-            cur_distr = self.latent_distr[i](cur_data)
-
-            cur_kl = torch.stack(
-                [self._compute_kl(cur_distr, lat_cond_distr(cur_data)) for lat_cond_distr in self.latent_distr],
-                dim=1
-            ).matmul(cur_mixing)\
-            .sum()  # sum across batch
+            cur_kl = self._compute_latent_kl_per_task(i, cur_data, cur_mixing)
             latents_kl.append(cur_kl)
         # average kl among tasks
-        latents_kl: torch.Tensor = torch.stack(latents_kl).mean()
+        latents_kl = torch.stack(latents_kl).mean()
         
         # get classifiers kl for each task
         classifiers_kl = []
         for i in range(self.num_tasks):
-            cur_distr = self.classifier_distr[i]
             cur_mixing = classifier_mixing[i]
-
-            cur_kl = torch.stack(
-                [self._compute_kl(cur_distr, cl_cond_distr) for cl_cond_distr in self.classifier_distr]
-            ).dot(cur_mixing)
+            cur_kl = self._compute_cls_kl_per_task(i, cur_mixing)
             classifiers_kl.append(cur_kl)
-        # average classifiers kl
-        classifiers_kl: torch.Tensor = torch.stack(classifiers_kl).mean()
+        # average kl among tasks
+        classifiers_kl = torch.stack(classifiers_kl).mean()
 
         return lh_val + latents_kl + classifiers_kl
+    
+    def _compute_lh_per_task(
+        self,
+        task_num: int,
+        latents: torch.Tensor,
+        classifiers: torch.Tensor,
+        targets: torch.Tensor
+    ) -> torch.Tensor:
+        """Compute -log prob for each latent and classifier particle for each batch,
+        mean across classifiers and latents, sum across targets with batch size correction
+        """
+        task_cond_distr = self.task_distrs[task_num]
+        target_shape = targets.shape[1:]
+        batch_size = targets.shape[0]
 
+        # log_prob shape=(batch_size, lat_num_part, classifier_num_part, target_shape)
+        return -task_cond_distr(latents, classifiers).log_prob(
+                targets[:, None, None, ...].expand(-1, self.latent_num_particles, self.classifier_num_particles, *target_shape)
+            ).mean(dim=(1, 2)).sum(dim=0) * (self.task_num_samples[task_num] / batch_size)
+    
+    def _compute_latent_kl_per_task(
+        self,
+        task_num: int,
+        inputs: torch.Tensor,
+        latent_mixing: torch.Tensor
+    ) -> torch.Tensor:
+        batch_size = inputs.shape[0]
+        cur_distr = self.latent_distr[task_num](inputs)
+
+        return torch.stack(
+            [self._compute_kl(cur_distr, lat_cond_distr(inputs)) for lat_cond_distr in self.latent_distr],
+            dim=1
+        ).matmul(latent_mixing).sum() * \
+            (self.task_num_samples[task_num] / batch_size) # sum across batch with batch size correction
+    
+    def _compute_cls_kl_per_task(
+        self,
+        task_num: int,
+        clas_mixing: torch.Tensor
+    ) -> torch.Tensor:
+        cur_distr = self.classifier_distr[task_num]
+
+        return torch.stack(
+            [self._compute_kl(cur_distr, cl_cond_distr) for cl_cond_distr in self.classifier_distr]
+        ).dot(clas_mixing)
+    
     def _compute_kl(self, distr_1: distr.Distribution, distr_2: distr.Distribution) -> torch.Tensor:
         """Computes KL analytically if possible else make a sample estimation
         """
