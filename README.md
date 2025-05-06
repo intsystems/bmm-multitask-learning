@@ -1,7 +1,7 @@
 # BMM Multitask Learning
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/intsystems/bmm-multitask-learning/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.6%2B-blue)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 
 This repository contains the implementation of a **Bayesian Mixture Model (BMM) for Multitask Learning**, developed by the Intelligent Systems Group. The project focuses on learning shared representations across multiple related tasks using Bayesian nonparametric methods.
 
