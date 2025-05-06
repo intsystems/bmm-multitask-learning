@@ -1,66 +1,47 @@
-# bmm-multitask
+# BMM Multitask Learning
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/intsystems/bmm-multitask-learning/blob/main/LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
+[![pages](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/doc_deploy.yaml/badge.svg)](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/doc_deploy.yaml)
+[![tests](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_run.yaml/badge.svg)](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_run.yaml)
 
-algos for multitask
+This repository contains the implementation of a **Bayesian Mixture Model (BMM) for Multitask Learning**, developed by the Intelligent Systems Group. The project focuses on learning shared representations across multiple related tasks using Bayesian nonparametric methods.
 
-Dummy demonstration is provided  in `examples/demo.ipynb`
+## Key Features
 
-## Project Organization
+- Bayesian nonparametric approach to multitask learning
+- Automatic determination of task relationships
+- Flexible model architecture for heterogeneous tasks
+- Efficient inference via variational methods or MCMC
 
-```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         bmm_multitask and configuration for tools like black
-│
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
-│
-└── bmm_multitask   <- Source code for use in this project.
-    │
-    ├── __init__.py             <- Makes bmm_multitask a Python module
-    │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    ├── modeling                
-    │   ├── __init__.py 
-    │   ├── predict.py          <- Code to run model inference with trained models          
-    │   └── train.py            <- Code to train models
-    │
-    └── plots.py                <- Code to create visualizations
+## Installation
+
+### Prerequisites
+- Python 3.12+
+
+### Install from source
+```bash
+git clone https://github.com/intsystems/bmm-multitask-learning.git
+cd bmm-multitask-learning
+poetry install
 ```
 
-## Links
-[Sketch of Blog Post](https://github.com/intsystems/bmm-multitask-learning/blob/31a40445d1099c4a2aa3552995b5adabc2bd3495/Sketch_Multitask_Learning.pdf)
+## Documentation
 
---------
+Full documentation is available [here](https://intsystems.github.io/bmm-multitask-learning/).
 
+Key sections:
+- API Reference
+- Theory and Mathematical Background
+- Usage examples
+
+## Blog post
+
+Currently available as [pdf](Sketch_Multitask_Learning.pdf).
+
+## Team
+
+- Kirill Semlin
+- Iryna Zabarianska
+- Ilgam Latypov
+- Alexander Terentyev

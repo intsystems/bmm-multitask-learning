@@ -169,7 +169,11 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-#Paper file
+
+# VS Code
+.vscode
+
+*.DS_Store#Paper file
 .paper/
 # VS Code
 .vscode/

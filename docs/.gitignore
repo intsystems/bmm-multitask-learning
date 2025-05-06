@@ -1,0 +1,4 @@
+# copyied from examples/ during build
+variational/elementary.ipynb
+task_clustering/multi-task-learning.ipynb
+sbmtl/experiment_testing_method.ipynb

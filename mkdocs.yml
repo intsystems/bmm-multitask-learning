@@ -1,0 +1,33 @@
+site_name: My Docs
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Variational: 
+    - Introduction: variational/intro.md
+    - API Reference: variational/reference.md
+    - Simple example: variational/elementary.ipynb
+  - Tusk clustering: 
+    - Example: task_clustering/multi-task-learning.ipynb
+  - Sparse multitask: 
+    - Example: sbmtl/experiment_testing_method.ipynb
+
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter:
+      include_requirejs: true
+  - mkdocs-simple-hooks:
+      hooks:
+        on_pre_build: "docs.variational.hooks:add_notebook_example"
+        on_pre_build: "docs.task_clustering.hooks:add_notebook_example"
+        on_pre_build: "docs.sbmtl.hooks:add_notebook_example"
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
