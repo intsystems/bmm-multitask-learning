@@ -33,4 +33,5 @@ jobs:
           virtualenvs-path: .venv
           installer-parallel: true
       - run: poetry install --only doc --no-interaction
+      - run: poetry run mkdocs build
       - run: poetry run mkdocs gh-deploy --force
