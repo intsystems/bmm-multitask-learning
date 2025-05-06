@@ -9,6 +9,8 @@ nav:
     - Simple example: variational/elementary.ipynb
   - Tusk clustering: 
     - Example: task_clustering/multi-task-learning.ipynb
+  - Sparse multitask: 
+    - Example: sbmtl/experiment_testing_method.ipynb
 
 plugins:
   - search
@@ -19,6 +21,7 @@ plugins:
       hooks:
         on_pre_build: "docs.variational.hooks:add_notebook_example"
         on_pre_build: "docs.task_clustering.hooks:add_notebook_example"
+        on_pre_build: "docs.sbmtl.hooks:add_notebook_example"
 
 markdown_extensions:
   - pymdownx.arithmatex:
