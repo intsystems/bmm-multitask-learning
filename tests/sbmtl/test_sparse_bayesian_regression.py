@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import pytest
-from bmm_multitask.sparse_bayesian_regression import SparseBayesianRegression
+from bmm_multitask_learning.sbmtl.sparse_bayesian_regression import SparseBayesianRegression
 
 def test_init_hyperparams():
     model = nn.Linear(10, 5, bias=False)
