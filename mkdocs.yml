@@ -1,0 +1,28 @@
+site_name: My Docs
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Variational: 
+    - Introduction: variational/intro.md
+    - API Reference: variational/reference.md
+    - Simple example: variational/elementary.ipynb
+
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter
+  - mkdocs-simple-hooks:
+      hooks:
+        on_pre_build: "docs.variational.hooks:add_notebook_example"
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
