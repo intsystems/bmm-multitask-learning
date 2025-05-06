@@ -171,3 +171,5 @@ cython_debug/
 .pypirc
 #Paper file
 .paper/
+# VS Code
+.vscode/
