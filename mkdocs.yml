@@ -1,6 +1,18 @@
 site_name: My Docs
 theme:
   name: material
+
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter:
+      include_requirejs: true
+
+hooks:
+  - docs/variational/hooks.py
+  - docs/task_clustering/hooks.py
+  - docs/sbmtl/hooks.py
+
 nav:
   - Home: index.md
   - Variational: 
@@ -11,17 +23,6 @@ nav:
     - Example: task_clustering/multi-task-learning.ipynb
   - Sparse multitask: 
     - Example: sbmtl/experiment_testing_method.ipynb
-
-plugins:
-  - search
-  - mkdocstrings
-  - mkdocs-jupyter:
-      include_requirejs: true
-  - mkdocs-simple-hooks:
-      hooks:
-        on_pre_build: "docs.variational.hooks:add_notebook_example"
-        on_pre_build: "docs.task_clustering.hooks:add_notebook_example"
-        on_pre_build: "docs.sbmtl.hooks:add_notebook_example"
 
 markdown_extensions:
   - pymdownx.arithmatex:
