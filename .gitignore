@@ -174,3 +174,7 @@ cython_debug/
 .vscode
 
 *.DS_Store
+#Paper file
+.paper/
+# VS Code
+.vscode/
