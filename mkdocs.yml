@@ -1,12 +1,20 @@
-site_name: My Docs
+site_name: Multitask learning
 theme:
   name: material
 
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_root_heading: true
   - mkdocs-jupyter:
       include_requirejs: true
+  - coverage:
+      html_report_dir: docs/htmlcov
 
 hooks:
   - docs/variational/hooks.py
@@ -23,6 +31,7 @@ nav:
     - Example: task_clustering/multi-task-learning.ipynb
   - Sparse multitask: 
     - Example: sbmtl/experiment_testing_method.ipynb
+  - Coverage report: coverage.md
 
 markdown_extensions:
   - pymdownx.arithmatex:
