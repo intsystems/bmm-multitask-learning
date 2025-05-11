@@ -14,6 +14,10 @@ Multi-task learning is a machine learning paradigm which involves optimization m
 * [Sparse Bayesian Multi-Task Learning](https://proceedings.neurips.cc/paper_files/paper/2011/file/4fac9ba115140ac4f1c22da82aa0bc7f-Paper.pdf)
 * [Variational method](https://proceedings.neurips.cc/paper_files/paper/2021/file/afd4836712c5e77550897e25711e1d96-Paper.pdf)
 
+## Coverage report
+
+Can be found on [pages](https://intsystems.github.io/bmm-multitask-learning/coverage/).
+
 ## Documentation
 
 Current documentation is available on [pages](https://intsystems.github.io/bmm-multitask-learning/).
