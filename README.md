@@ -2,8 +2,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
-[![pages](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/doc_deploy.yaml/badge.svg)](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/doc_deploy.yaml)
-[![tests](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_run.yaml/badge.svg)](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_run.yaml)
+[![test_and_docs](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_and_deploy.yaml/badge.svg)](https://github.com/intsystems/bmm-multitask-learning/actions/workflows/test_and_deploy.yaml)
 
 Multi-task learning is a machine learning paradigm which involves optimization model parameters for multiple diverse tasks. Vanilla multitask optimization presumes that the tasks are optimized without any hierarchy, but with some possilbe weights over tasks. This is an *educational project* which aims to implement different methods to assign weights or hierarchy to tasks to make the optimization more effective. We use *python* and [*pytorch*](https://docs.pytorch.org/docs/stable/index.html) as a computational framework.
 
