@@ -1,7 +1,6 @@
 """Utils for working with distributions
 """
 from typing import Callable
-from pipe import select
 
 import torch
 from torch import distributions as distr

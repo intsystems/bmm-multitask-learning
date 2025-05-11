@@ -27,6 +27,7 @@ class MultiTaskElbo(nn.Module):
         """
         TODO: rewrite docstring
         TODO: add pydantic class to restrict parameters (e.g. check lists' length is equal)
+        TODO: write about caveat that params of distr are not (and can not be) registered here
         Args:
             task_distrs (list[distr.Distribution]): Data distribution for each task p_t(y | z, w)
             task_num_samples (list[int]): Number of train samples for each task. Needed for unbiased ELBO computation in case of batched data.
@@ -120,8 +121,15 @@ class MultiTaskElbo(nn.Module):
         # average kl among tasks
         classifiers_kl = torch.stack(classifiers_kl).mean()
 
-        return lh_val + latents_kl + classifiers_kl
-    
+        elbo = lh_val + latents_kl + classifiers_kl
+
+        return {
+            "elbo": elbo,
+            "lh_loss": lh_val,
+            "lat_kl": latents_kl,
+            "cls_kl": classifiers_kl
+        }
+
     def _compute_lh_per_task(
         self,
         task_num: int,
@@ -140,7 +148,7 @@ class MultiTaskElbo(nn.Module):
         return -task_cond_distr(latents, classifiers).log_prob(
                 targets[:, None, None, ...].expand(-1, self.latent_num_particles, self.classifier_num_particles, *target_shape)
             ).mean(dim=(1, 2)).sum(dim=0) * (self.task_num_samples[task_num] / batch_size)
-    
+
     def _compute_latent_kl_per_task(
         self,
         task_num: int,
@@ -155,7 +163,7 @@ class MultiTaskElbo(nn.Module):
             dim=1
         ).matmul(latent_mixing).sum() * \
             (self.task_num_samples[task_num] / batch_size) # sum across batch with batch size correction
-    
+
     def _compute_cls_kl_per_task(
         self,
         task_num: int,
@@ -166,7 +174,7 @@ class MultiTaskElbo(nn.Module):
         return torch.stack(
             [self._compute_kl(cur_distr, cl_cond_distr) for cl_cond_distr in self.classifier_distr]
         ).dot(clas_mixing)
-    
+
     def _compute_kl(self, distr_1: distr.Distribution, distr_2: distr.Distribution) -> torch.Tensor:
         """Computes KL analytically if possible else make a sample estimation
         """
