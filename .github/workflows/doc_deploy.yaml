@@ -36,7 +36,7 @@ jobs:
           installer-parallel: true
       - run: poetry install --only doc --no-interaction
       - name: Download coverage artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-report
           path: coverage/
