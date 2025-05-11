@@ -5,8 +5,8 @@ name: tests
 on:
   push:
     branches:
-      - variational 
       - main
+      - variational_example_fix
   pull_request:
     branches:
       - main
@@ -57,8 +57,13 @@ jobs:
       #----------------------------------------------
       - name: Run tests
         run: |
-          poetry run pytest --cov=bmm_multitask_learning --cov-report=xml tests/
+          poetry run pytest --cov=bmm_multitask_learning --cov-report=html tests/
           poetry run coverage report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            htmlcov/
       #----------------------------------------------
       #             upload coverage stats
       # (requires CODECOV_TOKEN in repository secrets)

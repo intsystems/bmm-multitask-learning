@@ -25,16 +25,21 @@ class MultiTaskElbo(nn.Module):
         kl_estimator_num_samples: int = 10
     ):
         """
-        TODO: rewrite docstring
-        TODO: add pydantic class to restrict parameters (e.g. check lists' length is equal)
         Args:
-            task_distrs (list[distr.Distribution]): Data distribution for each task p_t(y | z, w)
+            task_distrs (list[TargetDistr]): Data distribution for each task p_t(y | z, w)
             task_num_samples (list[int]): Number of train samples for each task. Needed for unbiased ELBO computation in case of batched data.
-            classifier_distr (distr.Distribution): Distribution for the classifier q(w | D)
-            latent_distr (distr.Distribution): Distribution for the latent state q(z | x, D)
+            classifier_distr (list[distr.Distribution]): Distribution for the classifier q(w | D)
+            latent_distr (list[LatentDistr]): Distribution for the latent state q(z | x, D)
             classifier_num_particles (int, optional): num samples from classifier distr. Defaults to 1.
-            latent_num_particles (int, optional): num samples from latent distr. Defaults to 1.
-            temp_scheduler (Callable | Literal[&quot;const&quot;], optional): _description_. Defaults to Literal["const"].
+            latent_num_particles (int, optional):  num samples from latent distr. Defaults to 1.
+            temp_scheduler (Callable[[int], float] | Literal[&quot;const&quot;], optional): _description_. Defaults to Literal["const"].
+            kl_estimator_num_samples (int, optional): if your distrs does not have implicit kl computation, 
+            it will be approximated using this number of samples. Defaults to 10.
+
+            Warning:
+                This nn.Module does not register nn.Parameters from the distributions inside itself
+        Raises:
+            ValueError: if number of tasks <= 2
         """
         super().__init__()
 
@@ -120,8 +125,15 @@ class MultiTaskElbo(nn.Module):
         # average kl among tasks
         classifiers_kl = torch.stack(classifiers_kl).mean()
 
-        return lh_val + latents_kl + classifiers_kl
-    
+        elbo = lh_val + latents_kl + classifiers_kl
+
+        return {
+            "elbo": elbo,
+            "lh_loss": lh_val,
+            "lat_kl": latents_kl,
+            "cls_kl": classifiers_kl
+        }
+
     def _compute_lh_per_task(
         self,
         task_num: int,
@@ -140,7 +152,7 @@ class MultiTaskElbo(nn.Module):
         return -task_cond_distr(latents, classifiers).log_prob(
                 targets[:, None, None, ...].expand(-1, self.latent_num_particles, self.classifier_num_particles, *target_shape)
             ).mean(dim=(1, 2)).sum(dim=0) * (self.task_num_samples[task_num] / batch_size)
-    
+
     def _compute_latent_kl_per_task(
         self,
         task_num: int,
@@ -155,7 +167,7 @@ class MultiTaskElbo(nn.Module):
             dim=1
         ).matmul(latent_mixing).sum() * \
             (self.task_num_samples[task_num] / batch_size) # sum across batch with batch size correction
-    
+
     def _compute_cls_kl_per_task(
         self,
         task_num: int,
@@ -166,7 +178,7 @@ class MultiTaskElbo(nn.Module):
         return torch.stack(
             [self._compute_kl(cur_distr, cl_cond_distr) for cl_cond_distr in self.classifier_distr]
         ).dot(clas_mixing)
-    
+
     def _compute_kl(self, distr_1: distr.Distribution, distr_2: distr.Distribution) -> torch.Tensor:
         """Computes KL analytically if possible else make a sample estimation
         """
@@ -192,8 +204,12 @@ class MultiTaskElbo(nn.Module):
 
     @property
     def classifier_mixings_params(self):
+        """Accesses classifer mixing params
+        """
         return self._classifier_mixings_params
 
     @property
     def latent_mixings_params(self):
+        """Accesses latent mixing params
+        """
         return self._latent_mixings_params

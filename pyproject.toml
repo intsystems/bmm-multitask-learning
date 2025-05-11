@@ -58,6 +58,7 @@ torch = "^2.7.0"
 mkdocstrings = {extras = ["python"], version = "^0.29.1"}
 mkdocs-jupyter = "^0.25.1"
 mkdocs-material = "^9.6.12"
+mkdocs-coverage = "^1.1.0"
 
 
 [tool.poetry.group.test.dependencies]

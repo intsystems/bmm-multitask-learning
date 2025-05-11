@@ -15,4 +15,4 @@ mt_elbo:
 trainer:
   log_every_n_steps: 5
   accelerator: cpu
-  max_epochs: 100
+  max_epochs: 40
