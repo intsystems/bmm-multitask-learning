@@ -71,7 +71,7 @@ Now you can add generated package to your envirement.
 
 ## Blog post
 
-Currently available as [pdf](Sketch_Multitask_Learning.pdf).
+Currently available as [pdf](MTL_Blog_Post.pdf).
 
 ## Team
 
