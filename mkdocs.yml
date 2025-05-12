@@ -29,8 +29,10 @@ nav:
     - Simple example: variational/elementary.ipynb
   - Tusk clustering: 
     - Example: task_clustering/multi-task-learning.ipynb
+    - API Reference: task_clustering/reference.md
   - Sparse multitask: 
     - Example: sbmtl/experiment_testing_method.ipynb
+    - API Reference: sbmtl/reference.md
   - Coverage report: coverage.md
 
 markdown_extensions:
