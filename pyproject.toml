@@ -29,6 +29,8 @@ plotly = "^6.0.1"
 nbconvert = "^7.16.6"
 tensorboard = "^2.19.0"
 matplotlib = "^3.10.1"
+ipykernel = "^6.29.5"
+scikit-learn = "^1.6.1"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.1.1"
