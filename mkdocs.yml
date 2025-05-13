@@ -20,6 +20,7 @@ hooks:
   - docs/variational/hooks.py
   - docs/task_clustering/hooks.py
   - docs/sbmtl/hooks.py
+  - docs/coalescent/hooks.py
 
 nav:
   - Home: index.md
@@ -33,6 +34,9 @@ nav:
   - Sparse multitask: 
     - Example: sbmtl/experiment_testing_method.ipynb
     - API Reference: sbmtl/reference.md
+  - Coalescent: 
+    - Example: coalescent/coalescent_example.ipynb
+    - API Reference: coalescent/reference.md
   - Coverage report: coverage.md
 
 markdown_extensions:
