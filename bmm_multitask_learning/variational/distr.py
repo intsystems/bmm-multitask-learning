@@ -25,7 +25,7 @@ def kl_sample_estimation(
     Args:
         num_particles (int, optional): number of samples for estimation. Defaults to 1.
     """
-    samples = distr_1.rsample(num_particles)
+    samples = distr_1.rsample([num_particles])
     log_p_1 = distr_1.log_prob(samples)
     log_p_2 = distr_2.log_prob(samples)
 
